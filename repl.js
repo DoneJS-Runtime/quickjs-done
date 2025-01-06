@@ -26,6 +26,33 @@ import * as std from "qjs:std";
 import * as os from "qjs:os";
 import * as bjson from "qjs:bjson";
 
+//REPL POLYFILLS BEGIN
+globalThis.global = globalThis
+                 global.console.error = console.log
+                 global.console.warn = console.log
+                 globalThis.breakFunction = () => { throw new Error('Function Break'); };
+    
+                 if (typeof os !== 'undefined') {
+                     globalThis.sleep = os.sleep
+                     async function setTimeout2(func, ms) {globalThis.clearTimeout = false; await sleep(ms); if (!clearTimeout) { func(); } }
+                     globalThis.setTimeout = setTimeout2
+                 } else {
+                     console.error('os is not defined.')
+                 }
+
+                     
+
+                 if (typeof std !== 'undefined') {
+                     globalThis.urlGet = std.urlGet
+                     globalThis.loadFile = std.loadFile
+                     globalThis.printf = console.log
+                     globalThis.evalFile = std.loadScript
+                 // "    globalThis.require = std.loadScript"
+                     globalThis.getURL = std.urlGet
+                 } else {
+                     console.error('std is not defined.');
+                 }
+
 (function(g) {
     /* add 'bjson', 'os' and 'std' bindings */
     g.bjson = bjson;
@@ -276,7 +303,7 @@ import * as bjson from "qjs:bjson";
         if (delta > 0) {
             while (delta != 0) {
                 if (term_cursor_x == (term_width - 1)) {
-                    std.puts("\n"); /* translated to CRLF */
+                    std.puts("); /* translated to CRLF */
                     term_cursor_x = 0;
                     delta--;
                 } else {
@@ -418,7 +445,7 @@ import * as bjson from "qjs:bjson";
     }
 
     function accept_line() {
-        std.puts("\n");
+        std.puts(");
         history_add(cmd);
         return -1;
     }
@@ -501,7 +528,7 @@ import * as bjson from "qjs:bjson";
 
     function control_d() {
         if (cmd.length == 0) {
-            std.puts("\n");
+            std.puts(");
             return -3; /* exit read eval print loop */
         } else {
             delete_char_dir(1);
@@ -589,10 +616,10 @@ import * as bjson from "qjs:bjson";
 
     function control_c() {
         if (last_fun === control_c) {
-            std.puts("\n");
+            std.puts(");
             exit(0);
         } else {
-            std.puts("\n(Press Ctrl-C again to quit)\n");
+            std.puts("\n(Press Ctrl-C again to quit));
             readline_print_prompt();
         }
     }
@@ -744,7 +771,7 @@ import * as bjson from "qjs:bjson";
             max_width += 2;
             n_cols = Math.max(1, Math.floor((term_width + 1) / max_width));
             n_rows = Math.ceil(tab.length / n_cols);
-            std.puts("\n");
+            std.puts(");
             /* display the sorted list column-wise */
             for (row = 0; row < n_rows; row++) {
                 for (col = 0; col < n_cols; col++) {
@@ -756,7 +783,7 @@ import * as bjson from "qjs:bjson";
                         s = s.padEnd(max_width);
                     std.puts(s);
                 }
-                std.puts("\n");
+                std.puts(");
             }
             /* show a new prompt */
             readline_print_prompt();
@@ -1399,7 +1426,7 @@ import * as bjson from "qjs:bjson";
                         output_str(sep);
                         sep = ",";
                         if (col === cols - 1) {
-                            output_spaces("\n", indent);
+                            output_spaces(", indent);
                             col = 0;
                         } else {
                             output_spaces("", colwidth[col++] - w);
@@ -1412,10 +1439,10 @@ import * as bjson from "qjs:bjson";
             for (i = first; i < last; i++) {
                 output_str(sep);
                 sep = ",";
-                output_spaces("\n", indent);
+                output_spaces(", indent);
                 [i, w] = output_indent(indent, i);
             }
-            output_spaces("\n", indent -= 2);
+            output_spaces(", indent -= 2);
             output_pretty(tokens[last]);
             return [last, breakLength];
         }
@@ -1427,7 +1454,7 @@ import * as bjson from "qjs:bjson";
 
     function print(val) {
         std.puts(util.inspect(val, { depth: show_depth, colors: show_colors, showHidden: show_hidden }));
-        std.puts("\n");
+        std.puts(");
     }
 
     /* return true if the string was a directive */
@@ -1465,19 +1492,19 @@ import * as bjson from "qjs:bjson";
 
     function help() {
         var sel = (n) => n ? "*": " ";
-        std.puts(".help    print this help\n" +
-                 ".x      " + sel(hex_mode) + "hexadecimal number display\n" +
-                 ".dec    " + sel(!hex_mode) + "decimal number display\n" +
-                 ".time   " + sel(show_time) + "toggle timing display\n" +
-                 ".strict " + sel(use_strict) + "toggle strict mode evaluation\n" +
+        std.puts(".help    print this help +
+                 ".x      " + sel(hex_mode) + "hexadecimal number display +
+                 ".dec    " + sel(!hex_mode) + "decimal number display +
+                 ".time   " + sel(show_time) + "toggle timing display +
+                 ".strict " + sel(use_strict) + "toggle strict mode evaluation +
                  `.depth   set object depth (current: ${show_depth})\n` +
-                 ".hidden " + sel(show_hidden) + "toggle hidden properties display\n" +
-                 ".color  " + sel(show_colors) + "toggle colored output\n" +
-                 ".dark   " + sel(styles == themes.dark) + "select dark color theme\n" +
-                 ".light  " + sel(styles == themes.light) + "select light color theme\n" +
-                 ".clear   clear the terminal\n" +
-                 ".load    load source code from a file\n" +
-                 ".quit    exit\n");
+                 ".hidden " + sel(show_hidden) + "toggle hidden properties display +
+                 ".color  " + sel(show_colors) + "toggle colored output +
+                 ".dark   " + sel(styles == themes.dark) + "select dark color theme +
+                 ".light  " + sel(styles == themes.light) + "select light color theme +
+                 ".clear   clear the terminal +
+                 ".load    load source code from a file +
+                 ".quit    exit);
     }
 
     function load(s) {
@@ -1516,7 +1543,7 @@ import * as bjson from "qjs:bjson";
     }, null);
 
     function cmd_start() {
-        std.puts('QuickJS-ng - Type ".help" for help\n');
+        std.puts('QuickJS-ng DoneJS Edition - Type ".help" for help\n');
         cmd_readline_start();
     }
 
