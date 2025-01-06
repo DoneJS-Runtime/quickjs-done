@@ -26,35 +26,7 @@ import * as std from "qjs:std";
 import * as os from "qjs:os";
 import * as bjson from "qjs:bjson";
 
-
-globalThis.global = globalThis
-globalThis.safeGlobal = {}
-global.console.error = console.log
-global.console.warn = console.log
-
-if (typeof os !== 'undefined') {
-    globalThis.sleep = os.sleep
-    async function setTimeout2(func, ms) {globalThis.clearTimeout = false; await sleep(ms); if (!clearTimeout) { func(); } }
-    globalThis.setTimeout = setTimeout2
-} else {
-    console.error('os is not defined.')
-}
-
-if (typeof std !== 'undefined') {
-    globalThis.urlGet = std.urlGet
-    globalThis.loadFile = std.loadFile
-    globalThis.printf = console.log
-    globalThis.evalFile = std.loadScript
-    globalThis.require = (moduleSpecifier) => import(moduleSpecifier).then(mod => mod.default || mod);
-    globalThis.getURL = std.urlGet
-} else {
-    console.error('std is not defined.');
-}
-
 (function(g) {
-    /* init polyfills */
-    g = globalThis
-
     /* add 'bjson', 'os' and 'std' bindings */
     g.bjson = bjson;
     g.os = os;
