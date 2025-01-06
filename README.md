@@ -1,11 +1,11 @@
-# ⚡️ QuickJS - A mighty JavaScript engine
+# ⚡️ QuickJS/DoneJS - A VERY mighty JavaScript engine
 
 ## Overview
 
-QuickJS is a small and embeddable JavaScript engine. It aims to support the latest
+QuickJS/DoneJS (QuickJS NG DoneJS Edition) is a small and embeddable JavaScript engine. It aims to support the latest
 [ECMAScript] specification.
 
-This project is a _fork_ of the [original QuickJS project] by Fabrice Bellard and Charlie Gordon, after it went dormant, with the intent of reigniting its development.
+This project is a _fork_ of the [QuickJS NG project] which is a _fork_ of the [Original QuickJS project] by Fabrice Bellard and Charlie Gordon, after it went dormant, with the intent of reigniting its development.
 
 ## Getting started
 
@@ -14,11 +14,12 @@ documentation.
 
 ## Authors
 
-[@bnoordhuis], [@saghul], and many more [contributors].
+[@bnoordhuis], [@saghul], [@sneedgroup-holder]. and many more [contributors].
 
 [ECMAScript]: https://tc39.es/ecma262/
 [original QuickJS project]: https://bellard.org/quickjs
 [@bnoordhuis]: https://github.com/bnoordhuis
 [@saghul]: https://github.com/saghul
-[contributors]: https://github.com/quickjs-ng/quickjs/graphs/contributors
-[project website]: https://quickjs-ng.github.io/quickjs/
+[QuickJS NG contributors]: https://github.com/quickjs-ng/quickjs/graphs/contributors
+[QuickJS NG Website]: https://quickjs-ng.github.io/quickjs/
+[Project Website]: https://donejs-runtime.github.io
