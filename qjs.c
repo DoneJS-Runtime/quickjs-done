@@ -174,7 +174,7 @@ static int eval_file(JSContext *ctx, const char *filename, int module)
         "    globalThis.loadFile = std.loadFile;\n"
         "    globalThis.printf = console.log;\n"
         "    globalThis.evalFile = std.loadScript;\n"
-        //"    globalThis.require = std.loadScript;\n"
+        "    globalThis.require = (moduleSpecifier) => import(moduleSpecifier).then(mod => mod.default || mod);\n"
         "    globalThis.getURL = std.urlGet;\n"
         "} else {\n"
         "    console.error('std is not defined.');\n"
