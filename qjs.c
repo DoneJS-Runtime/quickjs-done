@@ -718,7 +718,6 @@ start:
             js_std_eval_binary(ctx, qjsc_repl, qjsc_repl_size, 0);
         }
 
-        eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
         if (standalone || compile_file) {
             if (JS_IsException(ret)) {
                 ret = JS_GetException(ctx);
