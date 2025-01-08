@@ -1549,7 +1549,11 @@ import * as bjson from "qjs:bjson";
         }
         mexpr = "";
 
-        eval_and_print(expr);
+        try {
+            eval_and_print(expr);
+        } catch (Exception ex) {
+            console.log(`Error: $(ex)`)
+        }
 
         return true;
     }
