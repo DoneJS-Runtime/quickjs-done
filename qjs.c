@@ -138,6 +138,20 @@ static int eval_file(JSContext *ctx, const char *filename, int module)
     uint8_t *buf;
     int ret, eval_flags;
     size_t buf_len;
+    buf = js_load_file(ctx, &buf_len, filename);
+    if (!buf) {
+        perror(filename);
+        exit(1);
+    }
+
+    if (module < 0) {
+        module = (js__has_suffix(filename, ".mjs") ||
+                  JS_DetectModule((const char *)buf, buf_len));
+    }
+    if (module)
+        eval_flags = JS_EVAL_TYPE_MODULE;
+    else
+        eval_flags = JS_EVAL_TYPE_GLOBAL;
        //POLYFILLS FOR QJS FILES BEGIN 
     const char *pf = "globalThis.global = globalThis;\n"
         "global.console.error = console.log\n"
@@ -167,23 +181,7 @@ static int eval_file(JSContext *ctx, const char *filename, int module)
         "}\n";
 
     eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
-
-
-    buf = js_load_file(ctx, &buf_len, filename);
-    if (!buf) {
-        perror(filename);
-        exit(1);
-    }
-
-    if (module < 0) {
-        module = (js__has_suffix(filename, ".mjs") ||
-                  JS_DetectModule((const char *)buf, buf_len));
-    }
-    if (module)
-        eval_flags = JS_EVAL_TYPE_MODULE;
-    else
-        eval_flags = JS_EVAL_TYPE_GLOBAL;
-
+        
     ret = eval_buf(ctx, buf, buf_len, filename, eval_flags);
     js_free(ctx, buf);
     return ret;
