@@ -33,6 +33,7 @@
 #if !defined(_MSC_VER)
 #include <sys/time.h>
 #if defined(_WIN32)
+#include <intrin.h>
 #include <timezoneapi.h>
 #endif
 #endif
@@ -1774,10 +1775,23 @@ static int init_class_range(JSRuntime *rt, JSClassShortDef const *tab,
     return 0;
 }
 
-/* Note: OS and CPU dependent */
+/* Uses code from LLVM project. */
 static inline uintptr_t js_get_stack_pointer(void)
 {
+#if defined(__clang__) || defined(__GNUC__)
     return (uintptr_t)__builtin_frame_address(0);
+#elif defined(_MSC_VER)
+    return (uintptr_t)_AddressOfReturnAddress();
+#else
+    char CharOnStack = 0;
+    // The volatile store here is intended to escape the local variable, to
+    // prevent the compiler from optimizing CharOnStack into anything other
+    // than a char on the stack.
+    //
+    // Tested on: MSVC 2015 - 2019, GCC 4.9 - 9, Clang 3.2 - 9, ICC 13 - 19.
+    char *volatile Ptr = &CharOnStack;
+    return (uintptr_t) Ptr;
+#endif
 }
 
 static inline BOOL js_check_stack_overflow(JSRuntime *rt, size_t alloca_size)
@@ -10084,6 +10098,13 @@ BOOL JS_SetConstructorBit(JSContext *ctx, JSValue func_obj, BOOL val)
     p = JS_VALUE_GET_OBJ(func_obj);
     p->is_constructor = val;
     return TRUE;
+}
+
+JS_BOOL JS_IsRegExp(JSValue val)
+{
+    if (JS_VALUE_GET_TAG(val) != JS_TAG_OBJECT)
+        return FALSE;
+    return JS_VALUE_GET_OBJ(val)->class_id == JS_CLASS_REGEXP;
 }
 
 BOOL JS_IsError(JSContext *ctx, JSValue val)
@@ -51264,6 +51285,13 @@ JSValue JS_NewDate(JSContext *ctx, double epoch_ms)
         return JS_EXCEPTION;
     JS_SetObjectData(ctx, obj, js_float64(time_clip(epoch_ms)));
     return obj;
+}
+
+JS_BOOL JS_IsDate(JSValue v)
+{
+    if (JS_VALUE_GET_TAG(v) != JS_TAG_OBJECT)
+        return FALSE;
+    return JS_VALUE_GET_OBJ(v)->class_id == JS_CLASS_DATE;
 }
 
 void JS_AddIntrinsicDate(JSContext *ctx)
