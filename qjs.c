@@ -641,7 +641,7 @@ start:
         "if (typeof std !== 'undefined') {\n"
         "    globalThis.urlGet = std.urlGet;\n"
         "    globalThis.loadFile = std.loadFile;\n"
-        "    globalThis.doneRequire = std.loadFile;\n"
+        "    globalThis.doneRequire = std.loadScript;\n"
         "    globalThis.printf = console.log;\n"
         "    globalThis.evalFile = std.loadScript;\n"
         "    globalThis.require = (moduleSpecifier) => import(moduleSpecifier).then(mod => mod.default || mod);\n"
