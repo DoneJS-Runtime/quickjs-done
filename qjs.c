@@ -621,7 +621,22 @@ start:
     /* exit on unhandled promise rejections */
     JS_SetHostPromiseRejectionTracker(rt, js_std_promise_rejection_tracker, NULL);
 
-    //POLYFILLS FOR QJS FILES BEGIN 
+    if (!empty_run) {
+        js_std_add_helpers(ctx, argc - optind, argv + optind);
+
+        /* make 'std' and 'os' visible to non module code */
+        if (load_std) {
+            const char *str =
+                "import * as bjson from 'qjs:bjson';\n"
+                "import * as std from 'qjs:std';\n"
+                "import * as os from 'qjs:os';\n"
+                "globalThis.bjson = bjson;\n"
+                "globalThis.std = std;\n"
+                "globalThis.os = os;\n";
+            eval_buf(ctx, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
+        }
+
+        //POLYFILLS FOR QJS FILES BEGIN 
     const char *pf = "globalThis.global = globalThis;\n"
         "global.console.error = console.log\n"
         "global.console.warn = console.log\n"
@@ -650,21 +665,6 @@ start:
         "}\n";
 
     eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
-
-    if (!empty_run) {
-        js_std_add_helpers(ctx, argc - optind, argv + optind);
-
-        /* make 'std' and 'os' visible to non module code */
-        if (load_std) {
-            const char *str =
-                "import * as bjson from 'qjs:bjson';\n"
-                "import * as std from 'qjs:std';\n"
-                "import * as os from 'qjs:os';\n"
-                "globalThis.bjson = bjson;\n"
-                "globalThis.std = std;\n"
-                "globalThis.os = os;\n";
-            eval_buf(ctx, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
-        }
 
         for(i = 0; i < include_count; i++) {
             if (eval_file(ctx, include_list[i], 0))
