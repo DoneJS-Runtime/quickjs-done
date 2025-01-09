@@ -668,6 +668,8 @@ start:
             eval_buf(ctx, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
         }
 
+        polyfiller(ctx);
+
         for(i = 0; i < include_count; i++) {
             if (eval_file(ctx, include_list[i], 0))
                 goto fail;
@@ -714,14 +716,10 @@ start:
         }
         
         if (interactive) {
-            polyfiller(ctx);
-            
             js_std_eval_binary(ctx, qjsc_repl, qjsc_repl_size, 0);
         }
 
         if (standalone || compile_file) {
-            polyfiller(ctx);
-            
             if (JS_IsException(ret)) {
                 r = 1;
             } else {
