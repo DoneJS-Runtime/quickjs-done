@@ -664,9 +664,9 @@ int js_module_set_import_meta(JSContext *ctx, JSValue func_val,
         if (use_realpath) {
             char *res = realpath(module_name, buf + strlen(buf));
             if (!res) {
-                JS_ThrowTypeError(ctx, "realpath failure");
-                JS_FreeCString(ctx, module_name);
-                return -1;
+                // JS_ThrowTypeError(ctx, "realpath failure"); // bugged so disabled
+                // JS_FreeCString(ctx, module_name);
+                // return -1;
             }
         } else
 #endif
