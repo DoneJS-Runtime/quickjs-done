@@ -57,6 +57,7 @@ static const int trailer_size = TRAILER_SIZE;
 static int qjs__argc;
 static char **qjs__argv;
 
+
 static BOOL is_standalone(const char *exe)
 {
     FILE *exe_f = fopen(exe, "rb");
@@ -137,6 +138,7 @@ static int eval_file(JSContext *ctx, const char *filename, int module)
     uint8_t *buf;
     int ret, eval_flags;
     size_t buf_len;
+
     buf = js_load_file(ctx, &buf_len, filename);
     if (!buf) {
         perror(filename);
@@ -147,12 +149,41 @@ static int eval_file(JSContext *ctx, const char *filename, int module)
         module = (js__has_suffix(filename, ".mjs") ||
                   JS_DetectModule((const char *)buf, buf_len));
     }
-    if (module) {
+    if (module)
         eval_flags = JS_EVAL_TYPE_MODULE;
-    } else {
+    else
         eval_flags = JS_EVAL_TYPE_GLOBAL;
-    }
 
+
+        //POLYFILLS FOR QJS FILES BEGIN 
+    const char *pf = "globalThis.global = globalThis;\n"
+        "global.console.error = console.log\n"
+        "global.console.warn = console.log\n"
+        "globalThis.breakFunction = () => { throw new Error('Function Break'); };\n"
+        "\n"
+        "if (typeof os !== 'undefined') {\n"
+        "    globalThis.sleep = os.sleep;\n"
+        "    async function setTimeout2(func, ms) {globalThis.clearTimeout = false; await sleep(ms); if (!clearTimeout) { func(); } }\n"
+        "    globalThis.setTimeout = setTimeout2\n"
+        "} else {\n"
+        "    console.error('os is not defined.');\n"
+        "}\n"
+        "\n"
+        "if (typeof std !== 'undefined') {\n"
+        "    globalThis.urlGet = std.urlGet;\n"
+        "    globalThis.loadFile = std.loadFile;\n"
+        "    globalThis.doneRequire = std.loadFile;\n"
+        "    globalThis.printf = console.log;\n"
+        "    globalThis.evalFile = std.loadScript;\n"
+        "    globalThis.require = (moduleSpecifier) => import(moduleSpecifier).then(mod => mod.default || mod);\n"
+        "    globalThis.stdRequire = globalThis.require;\n"
+        "    globalThis.safeGlobals = {} \n"
+        "    globalThis.getURL = std.urlGet;\n"
+        "} else {\n"
+        "    console.error('std is not defined.');\n"
+        "}\n";
+
+    eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
     ret = eval_buf(ctx, buf, buf_len, filename, eval_flags);
     js_free(ctx, buf);
     return ret;
@@ -623,8 +654,8 @@ start:
     if (!empty_run) {
         js_std_add_helpers(ctx, argc - optind, argv + optind);
 
-        // POLYFILLS
-const char *pf = "globalThis.global = globalThis;\n"
+        //POLYFILLS FOR QJS FILES BEGIN 
+    const char *pf = "globalThis.global = globalThis;\n"
         "global.console.error = console.log\n"
         "global.console.warn = console.log\n"
         "globalThis.breakFunction = () => { throw new Error('Function Break'); };\n"
@@ -660,8 +691,8 @@ const char *pf = "globalThis.global = globalThis;\n"
                 "globalThis.bjson = bjson;\n"
                 "globalThis.std = std;\n"
                 "globalThis.os = os;\n";
-            eval_buf(ctx, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
             eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
+            eval_buf(ctx, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
         } else {
             eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
         }
@@ -670,13 +701,6 @@ const char *pf = "globalThis.global = globalThis;\n"
             if (eval_file(ctx, include_list[i], 0))
                 goto fail;
         }
-        
-        if (interactive) {
-            js_std_eval_binary(ctx, qjsc_repl, qjsc_repl_size, 0);
-        }
-
-        //POLYFILLS FOR QJS INTERACTIVE BEGIN 
-        // eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
 
         if (standalone) {
             JSValue ns = load_standalone_module(ctx);
@@ -716,6 +740,9 @@ const char *pf = "globalThis.global = globalThis;\n"
             filename = argv[optind];
             if (eval_file(ctx, filename, module))
                 goto fail;
+        }
+        if (interactive) {
+            js_std_eval_binary(ctx, qjsc_repl, qjsc_repl_size, 0);
         }
 
         if (standalone || compile_file) {
