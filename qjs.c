@@ -371,7 +371,7 @@ static const JSMallocFunctions mi_mf = {
 
 #define PROG_NAME "qjs"
 
-void polyfiller(ctx) {
+void polyfiller(JSContext ctx) {
     //POLYFILLS FOR QJS FILES BEGIN 
     const char *pf = "globalThis.global = globalThis;\n"
         "global.console.error = console.log\n"
