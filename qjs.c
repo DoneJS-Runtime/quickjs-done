@@ -176,12 +176,13 @@ static int eval_file(JSContext *ctx, const char *filename, int module)
         module = (js__has_suffix(filename, ".mjs") ||
                   JS_DetectModule((const char *)buf, buf_len));
     }
-    if (module)
+    if (module) {
         eval_flags = JS_EVAL_TYPE_MODULE;
-    else
+    } else {
         eval_flags = JS_EVAL_TYPE_GLOBAL;
-
-    //eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
+    }
+            
+    eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
     ret = eval_buf(ctx, buf, buf_len, filename, eval_flags);
     js_free(ctx, buf);
     return ret;
