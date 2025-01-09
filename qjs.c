@@ -677,7 +677,7 @@ start:
         }
 
         //POLYFILLS FOR QJS INTERACTIVE BEGIN 
-        eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
+        // eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
 
         if (standalone) {
             JSValue ns = load_standalone_module(ctx);
