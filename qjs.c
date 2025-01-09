@@ -371,7 +371,7 @@ static const JSMallocFunctions mi_mf = {
 
 #define PROG_NAME "qjs"
 
-void polyfiller(void) {
+void polyfiller(ctx) {
     //POLYFILLS FOR QJS FILES BEGIN 
     const char *pf = "globalThis.global = globalThis;\n"
         "global.console.error = console.log\n"
@@ -668,7 +668,7 @@ start:
             eval_buf(ctx, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
         }
 
-        polyfiller()
+        // polyfiller(ctx)
 
         for(i = 0; i < include_count; i++) {
             if (eval_file(ctx, include_list[i], 0))
@@ -714,11 +714,12 @@ start:
             if (eval_file(ctx, filename, module))
                 goto fail;
         }
+
+        polyfiller(ctx)
+        
         if (interactive) {
             js_std_eval_binary(ctx, qjsc_repl, qjsc_repl_size, 0);
         }
-
-        polyfiller()
 
         if (standalone || compile_file) {
             if (JS_IsException(ret)) {
