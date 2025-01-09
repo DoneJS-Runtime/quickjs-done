@@ -57,6 +57,34 @@ static const int trailer_size = TRAILER_SIZE;
 static int qjs__argc;
 static char **qjs__argv;
 
+// POLYFILLS
+const char *pf = "globalThis.global = globalThis;\n"
+        "global.console.error = console.log\n"
+        "global.console.warn = console.log\n"
+        "globalThis.breakFunction = () => { throw new Error('Function Break'); };\n"
+        "\n"
+        "if (typeof os !== 'undefined') {\n"
+        "    globalThis.sleep = os.sleep;\n"
+        "    async function setTimeout2(func, ms) {globalThis.clearTimeout = false; await sleep(ms); if (!clearTimeout) { func(); } }\n"
+        "    globalThis.setTimeout = setTimeout2\n"
+        "} else {\n"
+        "    console.error('os is not defined.');\n"
+        "}\n"
+        "\n"
+        "if (typeof std !== 'undefined') {\n"
+        "    globalThis.urlGet = std.urlGet;\n"
+        "    globalThis.loadFile = std.loadFile;\n"
+        "    globalThis.doneRequire = std.loadFile;\n"
+        "    globalThis.printf = console.log;\n"
+        "    globalThis.evalFile = std.loadScript;\n"
+        "    globalThis.require = (moduleSpecifier) => import(moduleSpecifier).then(mod => mod.default || mod);\n"
+        "    globalThis.stdRequire = globalThis.require;\n"
+        "    globalThis.safeGlobals = {} \n"
+        "    globalThis.getURL = std.urlGet;\n"
+        "} else {\n"
+        "    console.error('std is not defined.');\n"
+        "}\n";
+
 
 static BOOL is_standalone(const char *exe)
 {
@@ -153,33 +181,7 @@ static int eval_file(JSContext *ctx, const char *filename, int module)
     else
         eval_flags = JS_EVAL_TYPE_GLOBAL;
 
-      //POLYFILLS FOR QJS FILES BEGIN 
-    const char *pf = "globalThis.global = globalThis;\n"
-        "global.console.error = console.log\n"
-        "global.console.warn = console.log\n"
-        "globalThis.breakFunction = () => { throw new Error('Function Break'); };\n"
-        "\n"
-        "if (typeof os !== 'undefined') {\n"
-        "    globalThis.sleep = os.sleep;\n"
-        "    async function setTimeout2(func, ms) {globalThis.clearTimeout = false; await sleep(ms); if (!clearTimeout) { func(); } }\n"
-        "    globalThis.setTimeout = setTimeout2\n"
-        "} else {\n"
-        "    console.error('os is not defined.');\n"
-        "}\n"
-        "\n"
-        "if (typeof std !== 'undefined') {\n"
-        "    globalThis.urlGet = std.urlGet;\n"
-        "    globalThis.loadFile = std.loadFile;\n"
-        "    globalThis.doneRequire = std.loadFile;\n"
-        "    globalThis.printf = console.log;\n"
-        "    globalThis.evalFile = std.loadScript;\n"
-        "    globalThis.require = (moduleSpecifier) => import(moduleSpecifier).then(mod => mod.default || mod);\n"
-        "    globalThis.stdRequire = globalThis.require;\n"
-        "    globalThis.safeGlobals = {} \n"
-        "    globalThis.getURL = std.urlGet;\n"
-        "} else {\n"
-        "    console.error('std is not defined.');\n"
-        "}\n";
+      //POLYFILLS FOR QJS FILES BEGIN
         eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
        
         
@@ -675,32 +677,6 @@ start:
         }
 
         //POLYFILLS FOR QJS INTERACTIVE BEGIN 
-    const char *pf = "globalThis.global = globalThis;\n"
-        "global.console.error = console.log\n"
-        "global.console.warn = console.log\n"
-        "globalThis.breakFunction = () => { throw new Error('Function Break'); };\n"
-        "\n"
-        "if (typeof os !== 'undefined') {\n"
-        "    globalThis.sleep = os.sleep;\n"
-        "    async function setTimeout2(func, ms) {globalThis.clearTimeout = false; await sleep(ms); if (!clearTimeout) { func(); } }\n"
-        "    globalThis.setTimeout = setTimeout2\n"
-        "} else {\n"
-        "    console.error('os is not defined.');\n"
-        "}\n"
-        "\n"
-        "if (typeof std !== 'undefined') {\n"
-        "    globalThis.urlGet = std.urlGet;\n"
-        "    globalThis.loadFile = std.loadFile;\n"
-        "    globalThis.doneRequire = std.loadFile;\n"
-        "    globalThis.printf = console.log;\n"
-        "    globalThis.evalFile = std.loadScript;\n"
-        "    globalThis.require = (moduleSpecifier) => import(moduleSpecifier).then(mod => mod.default || mod);\n"
-        "    globalThis.stdRequire = globalThis.require;\n"
-        "    globalThis.safeGlobals = {} \n"
-        "    globalThis.getURL = std.urlGet;\n"
-        "} else {\n"
-        "    console.error('std is not defined.');\n"
-        "}\n";
         //eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
 
         if (standalone) {
