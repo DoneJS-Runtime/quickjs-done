@@ -57,35 +57,6 @@ static const int trailer_size = TRAILER_SIZE;
 static int qjs__argc;
 static char **qjs__argv;
 
-// POLYFILLS
-const char *pf = "globalThis.global = globalThis;\n"
-        "global.console.error = console.log\n"
-        "global.console.warn = console.log\n"
-        "globalThis.breakFunction = () => { throw new Error('Function Break'); };\n"
-        "\n"
-        "if (typeof os !== 'undefined') {\n"
-        "    globalThis.sleep = os.sleep;\n"
-        "    async function setTimeout2(func, ms) {globalThis.clearTimeout = false; await sleep(ms); if (!clearTimeout) { func(); } }\n"
-        "    globalThis.setTimeout = setTimeout2\n"
-        "} else {\n"
-        "    console.error('os is not defined.');\n"
-        "}\n"
-        "\n"
-        "if (typeof std !== 'undefined') {\n"
-        "    globalThis.urlGet = std.urlGet;\n"
-        "    globalThis.loadFile = std.loadFile;\n"
-        "    globalThis.doneRequire = std.loadFile;\n"
-        "    globalThis.printf = console.log;\n"
-        "    globalThis.evalFile = std.loadScript;\n"
-        "    globalThis.require = (moduleSpecifier) => import(moduleSpecifier).then(mod => mod.default || mod);\n"
-        "    globalThis.stdRequire = globalThis.require;\n"
-        "    globalThis.safeGlobals = {} \n"
-        "    globalThis.getURL = std.urlGet;\n"
-        "} else {\n"
-        "    console.error('std is not defined.');\n"
-        "}\n";
-
-
 static BOOL is_standalone(const char *exe)
 {
     FILE *exe_f = fopen(exe, "rb");
@@ -651,6 +622,34 @@ start:
 
     if (!empty_run) {
         js_std_add_helpers(ctx, argc - optind, argv + optind);
+
+        // POLYFILLS
+const char *pf = "globalThis.global = globalThis;\n"
+        "global.console.error = console.log\n"
+        "global.console.warn = console.log\n"
+        "globalThis.breakFunction = () => { throw new Error('Function Break'); };\n"
+        "\n"
+        "if (typeof os !== 'undefined') {\n"
+        "    globalThis.sleep = os.sleep;\n"
+        "    async function setTimeout2(func, ms) {globalThis.clearTimeout = false; await sleep(ms); if (!clearTimeout) { func(); } }\n"
+        "    globalThis.setTimeout = setTimeout2\n"
+        "} else {\n"
+        "    console.error('os is not defined.');\n"
+        "}\n"
+        "\n"
+        "if (typeof std !== 'undefined') {\n"
+        "    globalThis.urlGet = std.urlGet;\n"
+        "    globalThis.loadFile = std.loadFile;\n"
+        "    globalThis.doneRequire = std.loadFile;\n"
+        "    globalThis.printf = console.log;\n"
+        "    globalThis.evalFile = std.loadScript;\n"
+        "    globalThis.require = (moduleSpecifier) => import(moduleSpecifier).then(mod => mod.default || mod);\n"
+        "    globalThis.stdRequire = globalThis.require;\n"
+        "    globalThis.safeGlobals = {} \n"
+        "    globalThis.getURL = std.urlGet;\n"
+        "} else {\n"
+        "    console.error('std is not defined.');\n"
+        "}\n";
 
         /* make 'std' and 'os' visible to non module code */
         if (load_std) {
