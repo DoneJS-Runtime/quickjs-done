@@ -652,7 +652,7 @@ start:
         "    console.error('std is not defined.');\n"
         "}\n";
 
-        const stdAndOS *str =
+        const char *stdAndOS =
                 "import * as bjson from 'qjs:bjson';\n"
                 "import * as std from 'qjs:std';\n"
                 "import * as os from 'qjs:os';\n"
