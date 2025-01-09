@@ -154,36 +154,6 @@ static int eval_file(JSContext *ctx, const char *filename, int module)
     else
         eval_flags = JS_EVAL_TYPE_GLOBAL;
 
-
-        //POLYFILLS FOR QJS FILES BEGIN 
-    const char *pf = "globalThis.global = globalThis;\n"
-        "global.console.error = console.log\n"
-        "global.console.warn = console.log\n"
-        "globalThis.breakFunction = () => { throw new Error('Function Break'); };\n"
-        "\n"
-        "if (typeof os !== 'undefined') {\n"
-        "    globalThis.sleep = os.sleep;\n"
-        "    async function setTimeout2(func, ms) {globalThis.clearTimeout = false; await sleep(ms); if (!clearTimeout) { func(); } }\n"
-        "    globalThis.setTimeout = setTimeout2\n"
-        "} else {\n"
-        "    console.error('os is not defined.');\n"
-        "}\n"
-        "\n"
-        "if (typeof std !== 'undefined') {\n"
-        "    globalThis.urlGet = std.urlGet;\n"
-        "    globalThis.loadFile = std.loadFile;\n"
-        "    globalThis.doneRequire = std.loadFile;\n"
-        "    globalThis.printf = console.log;\n"
-        "    globalThis.evalFile = std.loadScript;\n"
-        "    globalThis.require = (moduleSpecifier) => import(moduleSpecifier).then(mod => mod.default || mod);\n"
-        "    globalThis.stdRequire = globalThis.require;\n"
-        "    globalThis.safeGlobals = {} \n"
-        "    globalThis.getURL = std.urlGet;\n"
-        "} else {\n"
-        "    console.error('std is not defined.');\n"
-        "}\n";
-
-    eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
     ret = eval_buf(ctx, buf, buf_len, filename, eval_flags);
     js_free(ctx, buf);
     return ret;
@@ -691,8 +661,8 @@ start:
                 "globalThis.bjson = bjson;\n"
                 "globalThis.std = std;\n"
                 "globalThis.os = os;\n";
-            eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
             eval_buf(ctx, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
+            eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
         } else {
             eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
         }
