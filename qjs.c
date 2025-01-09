@@ -181,8 +181,7 @@ static int eval_file(JSContext *ctx, const char *filename, int module)
     } else {
         eval_flags = JS_EVAL_TYPE_GLOBAL;
     }
-            
-    eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
+
     ret = eval_buf(ctx, buf, buf_len, filename, eval_flags);
     js_free(ctx, buf);
     return ret;
@@ -663,6 +662,9 @@ start:
                 "globalThis.std = std;\n"
                 "globalThis.os = os;\n";
             eval_buf(ctx, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
+            eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
+        } else {
+            eval_buf(ctx, pf, strlen(pf), "<input>", JS_EVAL_TYPE_MODULE);
         }
 
         for(i = 0; i < include_count; i++) {
