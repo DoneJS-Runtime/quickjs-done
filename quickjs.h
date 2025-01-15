@@ -617,6 +617,12 @@ JS_EXTERN JSValue JS_GetException(JSContext *ctx);
 JS_EXTERN JS_BOOL JS_HasException(JSContext *ctx);
 JS_EXTERN JS_BOOL JS_IsError(JSContext *ctx, JSValue val);
 JS_EXTERN JS_BOOL JS_IsUncatchableError(JSContext* ctx, JSValue val);
+JS_EXTERN void JS_SetUncatchableError(JSContext *ctx, JSValue val);
+JS_EXTERN void JS_ClearUncatchableError(JSContext *ctx, JSValue val);
+// Shorthand for:
+//  JSValue exc = JS_GetException(ctx);
+//  JS_ClearUncatchableError(ctx, exc);
+//  JS_Throw(ctx, exc);
 JS_EXTERN void JS_ResetUncatchableError(JSContext *ctx);
 JS_EXTERN JSValue JS_NewError(JSContext *ctx);
 JS_EXTERN JSValue __js_printf_like(2, 3) JS_ThrowPlainError(JSContext *ctx, const char *fmt, ...);
@@ -631,6 +637,11 @@ JS_EXTERN void JS_FreeValueRT(JSRuntime *rt, JSValue v);
 JS_EXTERN JSValue JS_DupValue(JSContext *ctx, JSValue v);
 JS_EXTERN JSValue JS_DupValueRT(JSRuntime *rt, JSValue v);
 JS_EXTERN int JS_ToBool(JSContext *ctx, JSValue val); /* return -1 for JS_EXCEPTION */
+static inline JSValue JS_ToBoolean(JSContext *ctx, JSValue val)
+{
+    return JS_NewBool(ctx, JS_ToBool(ctx, val));
+}
+JS_EXTERN JSValue JS_ToNumber(JSContext *ctx, JSValue val);
 JS_EXTERN int JS_ToInt32(JSContext *ctx, int32_t *pres, JSValue val);
 static inline int JS_ToUint32(JSContext *ctx, uint32_t *pres, JSValue val)
 {
@@ -667,12 +678,14 @@ JS_EXTERN JSValue JS_NewObjectProtoClass(JSContext *ctx, JSValue proto, JSClassI
 JS_EXTERN JSValue JS_NewObjectClass(JSContext *ctx, int class_id);
 JS_EXTERN JSValue JS_NewObjectProto(JSContext *ctx, JSValue proto);
 JS_EXTERN JSValue JS_NewObject(JSContext *ctx);
+JS_EXTERN JSValue JS_ToObject(JSContext *ctx, JSValue val);
 
 JS_EXTERN JS_BOOL JS_IsFunction(JSContext* ctx, JSValue val);
 JS_EXTERN JS_BOOL JS_IsConstructor(JSContext* ctx, JSValue val);
 JS_EXTERN JS_BOOL JS_SetConstructorBit(JSContext *ctx, JSValue func_obj, JS_BOOL val);
 
 JS_EXTERN JS_BOOL JS_IsRegExp(JSValue val);
+JS_EXTERN JS_BOOL JS_IsMap(JSValue val);
 
 JS_EXTERN JSValue JS_NewArray(JSContext *ctx);
 JS_EXTERN int JS_IsArray(JSContext *ctx, JSValue val);
@@ -704,6 +717,8 @@ JS_EXTERN int JS_SetPrototype(JSContext *ctx, JSValue obj, JSValue proto_val);
 JS_EXTERN JSValue JS_GetPrototype(JSContext *ctx, JSValue val);
 JS_EXTERN int JS_GetLength(JSContext *ctx, JSValue obj, int64_t *pres);
 JS_EXTERN int JS_SetLength(JSContext *ctx, JSValue obj, int64_t len);
+JS_EXTERN int JS_SealObject(JSContext *ctx, JSValue obj);
+JS_EXTERN int JS_FreezeObject(JSContext *ctx, JSValue obj);
 
 #define JS_GPN_STRING_MASK  (1 << 0)
 #define JS_GPN_SYMBOL_MASK  (1 << 1)
@@ -823,6 +838,7 @@ typedef enum JSPromiseStateEnum {
 JS_EXTERN JSValue JS_NewPromiseCapability(JSContext *ctx, JSValue *resolving_funcs);
 JS_EXTERN JSPromiseStateEnum JS_PromiseState(JSContext *ctx, JSValue promise);
 JS_EXTERN JSValue JS_PromiseResult(JSContext *ctx, JSValue promise);
+JS_EXTERN JS_BOOL JS_IsPromise(JSValue val);
 
 JS_EXTERN JSValue JS_NewSymbol(JSContext *ctx, const char *description, JS_BOOL is_global);
 

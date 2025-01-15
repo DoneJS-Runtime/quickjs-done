@@ -1191,7 +1191,6 @@ static BOOL js_strict_eq2(JSContext *ctx, JSValue op1, JSValue op2,
 static BOOL js_strict_eq(JSContext *ctx, JSValue op1, JSValue op2);
 static BOOL js_same_value(JSContext *ctx, JSValue op1, JSValue op2);
 static BOOL js_same_value_zero(JSContext *ctx, JSValue op1, JSValue op2);
-static JSValue JS_ToObject(JSContext *ctx, JSValue val);
 static JSValue JS_ToObjectFree(JSContext *ctx, JSValue val);
 static JSProperty *add_property(JSContext *ctx,
                                 JSObject *p, JSAtom prop, int prop_flags);
@@ -1276,7 +1275,6 @@ static JSValue js_promise_then(JSContext *ctx, JSValueConst this_val,
                                int argc, JSValueConst *argv);
 static BOOL js_string_eq(const JSString *p1, const JSString *p2);
 static int js_string_compare(const JSString *p1, const JSString *p2);
-static JSValue JS_ToNumber(JSContext *ctx, JSValue val);
 static int JS_SetPropertyValue(JSContext *ctx, JSValue this_obj,
                                JSValue prop, JSValue val, int flags);
 static int JS_NumberIsInteger(JSContext *ctx, JSValue val);
@@ -1322,7 +1320,7 @@ static JSValue js_module_ns_autoinit(JSContext *ctx, JSObject *p, JSAtom atom,
                                  void *opaque);
 static JSValue JS_InstantiateFunctionListItem2(JSContext *ctx, JSObject *p,
                                                JSAtom atom, void *opaque);
-void JS_SetUncatchableError(JSContext *ctx, JSValue val, BOOL flag);
+static void js_set_uncatchable_error(JSContext *ctx, JSValue val, BOOL flag);
 
 static JSValue js_new_callsite(JSContext *ctx, JSCallSiteData *csd);
 static void js_new_callsite_data(JSContext *ctx, JSCallSiteData *csd, JSStackFrame *sf);
@@ -6821,7 +6819,11 @@ static BOOL is_backtrace_needed(JSContext *ctx, JSValue obj)
 
 JSValue JS_NewError(JSContext *ctx)
 {
-    return JS_NewObjectClass(ctx, JS_CLASS_ERROR);
+    JSValue obj = JS_NewObjectClass(ctx, JS_CLASS_ERROR);
+    if (JS_IsException(obj))
+        return JS_EXCEPTION;
+    build_backtrace(ctx, obj, JS_UNDEFINED, NULL, 0, 0, 0);
+    return obj;
 }
 
 static JSValue JS_MakeError(JSContext *ctx, JSErrorEnum error_num,
@@ -6830,7 +6832,7 @@ static JSValue JS_MakeError(JSContext *ctx, JSErrorEnum error_num,
     JSValue obj, msg;
 
     if (error_num == JS_PLAIN_ERROR) {
-        obj = JS_NewError(ctx);
+        obj = JS_NewObjectClass(ctx, JS_CLASS_ERROR);
     } else {
         obj = JS_NewObjectProtoClass(ctx, ctx->native_error_proto[error_num],
                                      JS_CLASS_ERROR);
@@ -7064,7 +7066,7 @@ static no_inline __exception int __js_poll_interrupts(JSContext *ctx)
         if (rt->interrupt_handler(rt, rt->interrupt_opaque)) {
             /* XXX: should set a specific flag to avoid catching */
             JS_ThrowInternalError(ctx, "interrupted");
-            JS_SetUncatchableError(ctx, ctx->rt->current_exception, TRUE);
+            js_set_uncatchable_error(ctx, ctx->rt->current_exception, TRUE);
             return -1;
         }
     }
@@ -10107,6 +10109,13 @@ JS_BOOL JS_IsRegExp(JSValue val)
     return JS_VALUE_GET_OBJ(val)->class_id == JS_CLASS_REGEXP;
 }
 
+JS_BOOL JS_IsMap(JSValue val)
+{
+    if (JS_VALUE_GET_TAG(val) != JS_TAG_OBJECT)
+        return FALSE;
+    return JS_VALUE_GET_OBJ(val)->class_id == JS_CLASS_MAP;
+}
+
 BOOL JS_IsError(JSContext *ctx, JSValue val)
 {
     JSObject *p;
@@ -10126,7 +10135,7 @@ BOOL JS_IsUncatchableError(JSContext *ctx, JSValue val)
     return p->class_id == JS_CLASS_ERROR && p->is_uncatchable_error;
 }
 
-void JS_SetUncatchableError(JSContext *ctx, JSValue val, BOOL flag)
+static void js_set_uncatchable_error(JSContext *ctx, JSValue val, BOOL flag)
 {
     JSObject *p;
     if (JS_VALUE_GET_TAG(val) != JS_TAG_OBJECT)
@@ -10136,9 +10145,19 @@ void JS_SetUncatchableError(JSContext *ctx, JSValue val, BOOL flag)
         p->is_uncatchable_error = flag;
 }
 
+void JS_SetUncatchableError(JSContext *ctx, JSValue val)
+{
+    js_set_uncatchable_error(ctx, val, TRUE);
+}
+
+void JS_ClearUncatchableError(JSContext *ctx, JSValue val)
+{
+    js_set_uncatchable_error(ctx, val, FALSE);
+}
+
 void JS_ResetUncatchableError(JSContext *ctx)
 {
-    JS_SetUncatchableError(ctx, ctx->rt->current_exception, FALSE);
+    js_set_uncatchable_error(ctx, ctx->rt->current_exception, FALSE);
 }
 
 int JS_SetOpaque(JSValue obj, void *opaque)
@@ -10752,7 +10771,7 @@ int JS_ToFloat64(JSContext *ctx, double *pres, JSValue val)
     return JS_ToFloat64Free(ctx, pres, js_dup(val));
 }
 
-static JSValue JS_ToNumber(JSContext *ctx, JSValue val)
+JSValue JS_ToNumber(JSContext *ctx, JSValue val)
 {
     return JS_ToNumberFree(ctx, js_dup(val));
 }
@@ -36231,7 +36250,7 @@ static JSValue js_global_queueMicrotask(JSContext *ctx, JSValue this_val,
 
 /* Object class */
 
-static JSValue JS_ToObject(JSContext *ctx, JSValue val)
+JSValue JS_ToObject(JSContext *ctx, JSValue val)
 {
     int tag = JS_VALUE_GET_NORM_TAG(val);
     JSValue obj;
@@ -37195,6 +37214,22 @@ done:
 exception:
     js_free_prop_enum(ctx, props, len);
     return JS_EXCEPTION;
+}
+
+int JS_SealObject(JSContext *ctx, JSValue obj)
+{
+    JSValue value = js_object_seal(ctx, JS_UNDEFINED, 1, &obj, 0);
+    int result = JS_IsException(value) ? -1 : TRUE;
+    JS_FreeValue(ctx, value);
+    return result;
+}
+
+int JS_FreezeObject(JSContext *ctx, JSValue obj)
+{
+    JSValue value = js_object_seal(ctx, JS_UNDEFINED, 1, &obj, 1);
+    int result = JS_IsException(value) ? -1 : TRUE;
+    JS_FreeValue(ctx, value);
+    return result;
 }
 
 static JSValue js_object_fromEntries(JSContext *ctx, JSValue this_val,
@@ -48543,6 +48578,13 @@ JSValue JS_PromiseResult(JSContext *ctx, JSValue promise)
     if (!s)
         return JS_UNDEFINED;
     return JS_DupValue(ctx, s->promise_result);
+}
+
+JS_BOOL JS_IsPromise(JSValue val)
+{
+    if (JS_VALUE_GET_TAG(val) != JS_TAG_OBJECT)
+        return FALSE;
+    return JS_VALUE_GET_OBJ(val)->class_id == JS_CLASS_PROMISE;
 }
 
 static int js_create_resolving_functions(JSContext *ctx, JSValue *args,
