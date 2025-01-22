@@ -58,11 +58,11 @@ static int qjs__argc;
 static char **qjs__argv;
 
 
-static BOOL is_standalone(const char *exe)
+static bool is_standalone(const char *exe)
 {
     FILE *exe_f = fopen(exe, "rb");
     if (!exe_f)
-        return FALSE;
+        return false;
     if (fseek(exe_f, -trailer_size, SEEK_END) < 0)
         goto fail;
     uint8_t buf[TRAILER_SIZE];
@@ -72,7 +72,7 @@ static BOOL is_standalone(const char *exe)
     return !memcmp(buf, trailer_magic, trailer_magic_size);
 fail:
     fclose(exe_f);
-    return FALSE;
+    return false;
 }
 
 static JSValue load_standalone_module(JSContext *ctx)
@@ -87,7 +87,10 @@ static JSValue load_standalone_module(JSContext *ctx)
         JS_FreeValue(ctx, obj);
         goto exception;
     }
-    js_module_set_import_meta(ctx, obj, FALSE, TRUE);
+    if (js_module_set_import_meta(ctx, obj, false, true) < 0) {
+        JS_FreeValue(ctx, obj);
+        goto exception;
+    }
     val = JS_EvalFunction(ctx, JS_DupValue(ctx, obj));
     val = js_std_await(ctx, val);
 
@@ -116,7 +119,11 @@ static int eval_buf(JSContext *ctx, const void *buf, int buf_len,
         val = JS_Eval(ctx, buf, buf_len, filename,
                       eval_flags | JS_EVAL_FLAG_COMPILE_ONLY);
         if (!JS_IsException(val)) {
-            js_module_set_import_meta(ctx, val, TRUE, TRUE);
+            if (js_module_set_import_meta(ctx, val, true, true) < 0) {
+                js_std_dump_error(ctx);
+                ret = -1;
+                goto end;
+            }
             val = JS_EvalFunction(ctx, val);
         }
         val = js_std_await(ctx, val);
@@ -129,6 +136,7 @@ static int eval_buf(JSContext *ctx, const void *buf, int buf_len,
     } else {
         ret = 0;
     }
+end:
     JS_FreeValue(ctx, val);
     return ret;
 }
@@ -252,14 +260,7 @@ static inline unsigned long long js_trace_malloc_ptr_offset(uint8_t *ptr,
     return ptr - dp->base;
 }
 
-static void
-#if defined(_WIN32) && !defined(__clang__)
-/* mingw printf is used */
-__attribute__((format(gnu_printf, 2, 3)))
-#else
-__attribute__((format(printf, 2, 3)))
-#endif
-    js_trace_malloc_printf(void *opaque, const char *fmt, ...)
+static void JS_PRINTF_FORMAT_ATTR(2, 3) js_trace_malloc_printf(void *opaque, JS_PRINTF_FORMAT const char *fmt, ...)
 {
     va_list ap;
     int c;
