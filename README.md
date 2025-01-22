@@ -19,6 +19,7 @@ documentation.
 [ECMAScript]: https://tc39.es/ecma262/
 [original QuickJS project]: https://bellard.org/quickjs
 [@bnoordhuis]: https://github.com/bnoordhuis
+[@sneedgroup-holder]: https://sneedgit.nodemixaholic.com/sneedgroup-holder
 [@saghul]: https://github.com/saghul
 [QuickJS NG contributors]: https://github.com/quickjs-ng/quickjs/graphs/contributors
 [QuickJS NG project]: https://quickjs-ng.github.io/quickjs/
